@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nyatter / Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Quicksand', sans-serif; background: radial-gradient(circle at top right, #1e293b, #0f172a); color: #f8fafc; height: 100vh; overflow: hidden; }
+        .glass-panel { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border-right: 1px solid rgba(255, 255, 255, 0.05); border-left: 1px solid rgba(255, 255, 255, 0.05); }
+        .rainbow-text { background: linear-gradient(to right, #ff4d4d, #f97316, #fbbf24, #4ade80, #60a5fa, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .hidden { display: none !important; }
+        .meow-btn { background: linear-gradient(90deg, #4f46e5, #7c3aed); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3); transition: transform 0.1s; }
+        .meow-btn:active { transform: scale(0.95); }
+        .input-nyan { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.75rem; color: white; }
+        
+        #emoji-picker { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; position: absolute; z-index: 100; border-radius: 12px; bottom: 60px; left: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .emoji-btn { cursor: pointer; font-size: 1.2rem; transition: transform 0.2s; }
+        .emoji-btn:hover { transform: scale(1.3); }
+        
+        .post-img { max-height: 350px; width: 100%; object-fit: cover; border-radius: 1rem; margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .preview-box img { max-height: 120px; border-radius: 0.5rem; border: 2px solid #6366f1; margin-bottom: 10px; }
+        
+        .pinned-post { border-left: 4px solid #fbbf24 !important; background: rgba(251, 191, 36, 0.03) !important; }
+        .dev-badge { background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 0.7rem; border: 1px solid #6366f1; padding: 0 4px; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex justify-center">
+
+    <div id="auth-ui" class="w-full max-w-[420px] self-center bg-slate-800/60 p-10 rounded-[2rem] border border-white/10 shadow-2xl">
+        <div class="flex justify-center mb-6"><img src="logo.png" alt="Nyatter" class="w-20 h-20 object-contain"></div>
+        <div id="login-form">
+            <h1 class="text-3xl font-bold mb-6 text-center">Login to <span class="rainbow-text">Nyatter</span></h1>
+            <input type="text" id="login-user" placeholder="Username" class="w-full px-5 py-3 input-nyan mb-4 outline-none">
+            <input type="password" id="login-pass" placeholder="Password" class="w-full px-5 py-3 input-nyan mb-6 outline-none">
+            <button onclick="login()" class="w-full py-3 meow-btn rounded-xl font-bold">Login</button>
+            <p class="text-center mt-6 text-slate-400 text-sm">Need an account? <button onclick="toggleView()" class="text-indigo-400 font-bold">Sign up</button></p>
+        </div>
+        <div id="signup-form" class="hidden">
+            <h1 class="text-3xl font-bold mb-6 text-center text-white">Join <span class="rainbow-text">Nyatter</span></h1>
+            <input type="text" id="reg-user" placeholder="Choose Username" class="w-full px-5 py-3 input-nyan mb-4 outline-none">
+            <input type="password" id="reg-pass" placeholder="Create Password" class="w-full px-5 py-3 input-nyan mb-6 outline-none">
+            <button onclick="signup()" class="w-full py-3 meow-btn rounded-xl font-bold">Sign Up</button>
+            <p class="text-center mt-6 text-slate-400 text-sm">Member? <button onclick="toggleView()" class="text-indigo-400 font-bold">Login</button></p>
+        </div>
+    </div>
+
+    <div id="app-ui" class="hidden w-full max-w-[1300px] flex h-screen">
+        <aside class="w-1/4 max-w-[280px] flex flex-col p-4 glass-panel">
+            <div class="mb-8 px-4 py-2"><img src="logo.png" alt="Nyatter" class="w-12 h-12"></div>
+            <nav class="flex-1 space-y-2">
+                <div class="flex items-center gap-4 px-4 py-3 text-xl font-bold text-white bg-indigo-500/10 rounded-full cursor-pointer"><span>🏠</span> Home</div>
+            </nav>
+            <div class="mt-auto p-4 border-t border-white/5">
+                <p class="font-bold text-sm" id="user-tag"></p>
+                <div id="dev-tag-sidebar" class="hidden"><span class="dev-badge">DEVELOPER 🛠️</span></div>
+                <button onclick="logout()" class="w-full mt-2 py-2 bg-slate-800 rounded-lg text-sm text-red-400 font-bold">Logout</button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col glass-panel border-x h-full">
+            <header class="p-4 border-b border-white/5 bg-slate-900/60 backdrop-blur-md">
+                <h2 class="text-xl font-bold">Home</h2>
+            </header>
+
+            <div class="flex-1 overflow-y-auto custom-scroll">
+                <div class="p-4 border-b border-white/5 bg-slate-900/20">
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center font-bold text-lg" id="user-avatar">?</div>
+                        <div class="flex-1 relative">
+                            <textarea id="meow-content" placeholder="What's happening?" class="w-full bg-transparent text-xl outline-none resize-none h-24 pt-2 text-white"></textarea>
+                            <div id="preview-area" class="preview-box"></div>
+                            
+                            <div class="flex justify-between items-center border-t border-white/5 pt-4">
+                                <div class="flex gap-4">
+                                    <label class="cursor-pointer text-xl hover:scale-110 transition-transform">🖼️<input type="file" id="post-file" class="hidden" accept="image/*" onchange="handleFile(event)"></label>
+                                    <span class="cursor-pointer text-xl hover:scale-110 transition-transform" onclick="toggleEmoji()">😃</span>
+                                </div>
+                                <button onclick="postMeow()" class="px-8 py-2 meow-btn rounded-full font-bold text-white">Meow</button>
+                            </div>
+
+                            <div id="emoji-picker" class="hidden">
+                                <span class="emoji-btn" onclick="insertEmoji('😺')">😺</span><span class="emoji-btn" onclick="insertEmoji('🌈')">🌈</span>
+                                <span class="emoji-btn" onclick="insertEmoji('✨')">✨</span><span class="emoji-btn" onclick="insertEmoji('🚀')">🚀</span>
+                                <span class="emoji-btn" onclick="insertEmoji('🔥')">🔥</span><span class="emoji-btn" onclick="insertEmoji('💯')">💯</span>
+                                <span class="emoji-btn" onclick="insertEmoji('😂')">😂</span><span class="emoji-btn" onclick="insertEmoji('💎')">💎</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="feed" class="divide-y divide-white/5"></div>
+            </div>
+        </main>
+
+        <aside class="w-1/3 max-w-[350px] p-6 h-full">
+            <div class="bg-slate-800/40 rounded-2xl p-5 border border-white/5">
+                <h3 class="text-xl font-bold mb-4">Galactic Trends</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold uppercase">Trending</p>
+                        <p class="font-bold text-indigo-400">#NyanSpace</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold uppercase">Community</p>
+                        <p class="font-bold text-white">#HaydenDev</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        let currentImg = null;
+        let currentUser = null;
+        const DEV_NAME = "HaydenDev";
+
+        window.onload = () => {
+            const saved = localStorage.getItem('currentUser');
+            if (saved) loginSuccess(saved);
+        };
+
+        function toggleView() {
+            document.getElementById('login-form').classList.toggle('hidden');
+            document.getElementById('signup-form').classList.toggle('hidden');
+        }
+
+        function signup() {
+            const u = document.getElementById('reg-user').value.trim();
+            const p = document.getElementById('reg-pass').value.trim();
+            if(!u || !p) return;
+            localStorage.setItem('user_'+u, p);
+            loginSuccess(u);
+        }
+
+        function login() {
+            const u = document.getElementById('login-user').value.trim();
+            const p = document.getElementById('login-pass').value.trim();
+            if(localStorage.getItem('user_'+u) === p) loginSuccess(u);
+            else alert("Access Denied: Invalid Credentials");
+        }
+
+        function loginSuccess(u) {
+            currentUser = u;
+            localStorage.setItem('currentUser', u);
+            document.getElementById('auth-ui').classList.add('hidden');
+            document.getElementById('app-ui').classList.remove('hidden');
+            document.getElementById('user-tag').innerText = "@" + u;
+            document.getElementById('user-avatar').innerText = u[0].toUpperCase();
+            if(u === DEV_NAME) document.getElementById('dev-tag-sidebar').classList.remove('hidden');
+            renderFeed();
+        }
+
+        function handleFile(e) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                currentImg = reader.result;
+                document.getElementById('preview-area').innerHTML = `<img src="${currentImg}">`;
+            };
+            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        }
+
+        function toggleEmoji() { document.getElementById('emoji-picker').classList.toggle('hidden'); }
+        function insertEmoji(e) { 
+            document.getElementById('meow-content').value += e; 
+            document.getElementById('emoji-picker').classList.add('hidden');
+        }
+
+        function postMeow() {
+            const txt = document.getElementById('meow-content').value.trim();
+            if(!txt && !currentImg) return;
+            
+            const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+            const newPost = { 
+                id: Date.now(), 
+                user: currentUser, 
+                text: txt, 
+                img: currentImg, 
+                likes: [], 
+                replies: [], 
+                pinned: false 
+            };
+            
+            posts.unshift(newPost);
+            localStorage.setItem('posts', JSON.stringify(posts));
+            
+            // Clear inputs
+            document.getElementById('meow-content').value = "";
+            document.getElementById('preview-area').innerHTML = "";
+            currentImg = null;
+            renderFeed();
+        }
+
+        function toggleLike(id) {
+            const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+            const p = posts.find(x => x.id === id);
+            if(!p) return;
+            if(!p.likes) p.likes = [];
+            
+            if(p.likes.includes(currentUser)) p.likes = p.likes.filter(u => u !== currentUser);
+            else p.likes.push(currentUser);
+            
+            localStorage.setItem('posts', JSON.stringify(posts));
+            renderFeed();
+        }
+
+        function addReply(id) {
+            const input = document.getElementById('re-'+id);
+            if(!input.value.trim()) return;
+            const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+            const p = posts.find(x => x.id === id);
+            if(!p) return;
+            if(!p.replies) p.replies = [];
+            
+            p.replies.push({ user: currentUser, text: input.value });
+            localStorage.setItem('posts', JSON.stringify(posts));
+            input.value = "";
+            renderFeed();
+        }
+
+        function devDelete(id) {
+            if(currentUser !== DEV_NAME) return;
+            let posts = JSON.parse(localStorage.getItem('posts') || '[]');
+            posts = posts.filter(p => p.id !== id);
+            localStorage.setItem('posts', JSON.stringify(posts));
+            renderFeed();
+        }
+
+        function devPin(id) {
+            if(currentUser !== DEV_NAME) return;
+            let posts = JSON.parse(localStorage.getItem('posts') || '[]');
+            const p = posts.find(x => x.id === id);
+            if(p) p.pinned = !p.pinned;
+            localStorage.setItem('posts', JSON.stringify(posts));
+            renderFeed();
+        }
+
+        function renderFeed() {
+            let posts = JSON.parse(localStorage.getItem('posts') || '[]');
+            const container = document.getElementById('feed');
+            
+            // Empty state
+            if(posts.length === 0) {
+                container.innerHTML = `<div class="p-20 text-center text-slate-600 font-bold">The galaxy is quiet...</div>`;
+                return;
+            }
+
+            // Sanitizer & Sort
+            posts = posts.map(p => ({
+                ...p,
+                likes: p.likes || [],
+                replies: p.replies || p.comments || [], // Fixes old "comments" data
+                pinned: p.pinned || false
+            }));
+
+            posts.sort((a, b) => b.pinned - a.pinned || b.id - a.id);
+
+            container.innerHTML = posts.map(p => `
+                <div class="p-4 transition-colors hover:bg-white/[0.02] ${p.pinned ? 'pinned-post' : ''}">
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center font-bold text-indigo-400 border border-white/5 shrink-0">${p.user[0].toUpperCase()}</div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-white">${p.user}</span>
+                                    ${p.user === DEV_NAME ? '<span class="dev-badge">DEV 🛠️</span>' : ''}
+                                    ${p.pinned ? '<span class="text-amber-400 text-[10px] font-bold uppercase tracking-widest">📌 Pinned</span>' : ''}
+                                </div>
+                                ${currentUser === DEV_NAME ? `
+                                    <div class="flex gap-2">
+                                        <button onclick="devPin(${p.id})" class="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-1 rounded hover:bg-amber-500/20">${p.pinned ? 'Unpin' : 'Pin'}</button>
+                                        <button onclick="devDelete(${p.id})" class="text-[10px] bg-red-500/10 text-red-500 px-2 py-1 rounded hover:bg-red-500/20">Del</button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <p class="text-slate-200 mt-1 whitespace-pre-wrap">${p.text}</p>
+                            ${p.img ? `<img src="${p.img}" class="post-img shadow-xl">` : ''}
+                            
+                            <div class="flex gap-6 mt-4 text-sm font-bold">
+                                <button onclick="toggleLike(${p.id})" class="${p.likes.includes(currentUser) ? 'text-pink-500' : 'text-slate-500'} hover:scale-110 transition-transform">
+                                    ${p.likes.includes(currentUser) ? '❤️' : '🤍'} ${p.likes.length}
+                                </button>
+                                <span class="text-slate-500">💬 ${p.replies.length}</span>
+                            </div>
+
+                            <div class="mt-4 space-y-2 pl-4 border-l-2 border-white/5">
+                                ${p.replies.map(r => `<div class="text-sm bg-white/5 p-2 rounded-lg"><span class="text-indigo-400 font-bold">@${r.user}</span>: ${r.text}</div>`).join('')}
+                                <div class="flex gap-2 mt-3">
+                                    <input id="re-${p.id}" type="text" placeholder="Reply..." class="flex-1 bg-slate-900/50 border border-white/10 rounded-full px-4 py-1.5 text-xs outline-none text-white focus:border-indigo-500">
+                                    <button onclick="addReply(${p.id})" class="text-indigo-400 text-xs font-bold hover:text-white px-2">Post</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function logout() { localStorage.removeItem('currentUser'); location.reload(); }
+    </script>
+</body>
+</html>
